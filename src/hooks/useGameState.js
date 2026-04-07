@@ -1,87 +1,209 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BOSSES } from '../data/bosses';
+import { QUOTES } from '../data/quotes';
 
-const INITIAL_STATE = {
-  user: {
-    name: 'Hunter',
-    level: 1,
-    exp: 0,
-    expToNextLevel: 100,
-    rank: 'E',
-    hp: 100,
-    mp: 100,
-  },
-  stats: {
-    strength: 10,
-    agility: 10,
-    sense: 10,
-    vitality: 10,
-    intelligence: 10,
-  },
-  quests: [
-    { id: 1, title: 'Push-ups', goal: 100, current: 0, completed: false, reward: 10 },
-    { id: 2, title: 'Sit-ups', goal: 100, current: 0, completed: false, reward: 10 },
-    { id: 3, title: 'Running', goal: 10, current: 0, completed: false, reward: 20 },
+const INITIAL_STATS = {
+  force: 10,
+  intelligence: 10,
+  discipline: 10,
+  charisma: 10,
+  wealth: 10,
+  health: 10,
+  style: 10,
+  mental: 10,
+};
+
+const DEFAULT_TASKS = [
+  { id: '1', text: "Boire 2L d'eau", category: "health", completed: false, xp: 20, stat: "health" },
+  { id: '2', text: "Séance de Sport", category: "force", completed: false, xp: 50, stat: "force" },
+  { id: '3', text: "Lire 10 pages", category: "intelligence", completed: false, xp: 30, stat: "intelligence" },
+  { id: '4', text: "Méditation 10min", category: "mental", completed: false, xp: 20, stat: "mental" },
+];
+
+const INITIAL_USER = {
+  pseudo: 'Hunter',
+  sexe: 'homme', // 'homme' | 'femme'
+  onboardingComplete: false,
+  addictions: [
+    { id: 'tabac', name: 'Tabac', icon: '🚬', lastRelapse: new Date().toISOString(), bestStreak: 0 },
+    { id: 'sucre', name: 'Malbouffe', icon: '🍔', lastRelapse: new Date().toISOString(), bestStreak: 0 },
+    { id: 'porn', name: 'Pornographie', icon: '🚫', lastRelapse: new Date().toISOString(), bestStreak: 0 },
   ],
-  inventory: [],
+  lastDailyCheck: new Date().toISOString()
 };
 
 export const useGameState = () => {
-  const [state, setState] = useState(INITIAL_STATE);
+  const [user, setUser] = useState(INITIAL_USER);
+  const [stats, setStats] = useState(INITIAL_STATS);
+  const [progress, setProgress] = useState({ level: 1, xp: 0, xpToNextLevel: 100 });
+  const [tasks, setTasks] = useState(DEFAULT_TASKS);
+  const [bossIndex, setBossIndex] = useState(0);
+  const [bossHp, setBossHp] = useState(BOSSES[0].hp);
+  const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const rank = useMemo(() => {
+    const lvl = progress.level;
+    if (lvl >= 100) return 'S';
+    if (lvl >= 80) return 'A';
+    if (lvl >= 60) return 'B';
+    if (lvl >= 40) return 'C';
+    if (lvl >= 20) return 'D';
+    return 'E';
+  }, [progress.level]);
+
+  const currentBoss = useMemo(() => {
+    const b = BOSSES[bossIndex % BOSSES.length];
+    return { ...b, hp: bossHp };
+  }, [bossIndex, bossHp]);
+
+  // Persistence: Load
   useEffect(() => {
-    loadState();
+    const loadAll = async () => {
+      try {
+        const savedUser = await AsyncStorage.getItem('@glow_user');
+        const savedStats = await AsyncStorage.getItem('@glow_stats');
+        const savedProgress = await AsyncStorage.getItem('@glow_progress');
+        const savedTasks = await AsyncStorage.getItem('@glow_tasks');
+        const savedBossIdx = await AsyncStorage.getItem('@glow_boss_idx');
+        const savedBossHp = await AsyncStorage.getItem('@glow_boss_hp');
+        const savedStreak = await AsyncStorage.getItem('@glow_streak');
+
+        if (savedUser) setUser(JSON.parse(savedUser));
+        if (savedStats) setStats(JSON.parse(savedStats));
+        if (savedProgress) setProgress(JSON.parse(savedProgress));
+        if (savedTasks) setTasks(JSON.parse(savedTasks));
+        if (savedBossIdx) setBossIndex(parseInt(savedBossIdx));
+        if (savedBossHp) setBossHp(parseFloat(savedBossHp));
+        if (savedStreak) setStreak(parseInt(savedStreak));
+      } catch (e) {
+        console.error("Error loading state", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAll();
   }, []);
 
-  const loadState = async () => {
-    try {
-      const savedState = await AsyncStorage.getItem('@glow_up_state');
-      if (savedState) {
-        setState(JSON.parse(savedState));
+  // Persistence: Save
+  useEffect(() => {
+    if (loading) return;
+    const saveAll = async () => {
+      try {
+        await AsyncStorage.setItem('@glow_user', JSON.stringify(user));
+        await AsyncStorage.setItem('@glow_stats', JSON.stringify(stats));
+        await AsyncStorage.setItem('@glow_progress', JSON.stringify(progress));
+        await AsyncStorage.setItem('@glow_tasks', JSON.stringify(tasks));
+        await AsyncStorage.setItem('@glow_boss_idx', bossIndex.toString());
+        await AsyncStorage.setItem('@glow_boss_hp', bossHp.toString());
+        await AsyncStorage.setItem('@glow_streak', streak.toString());
+      } catch (e) {
+        console.error("Error saving state", e);
       }
-    } catch (e) {
-      console.error('Failed to load state', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    saveAll();
+  }, [user, stats, progress, tasks, bossIndex, bossHp, streak, loading]);
 
-  const saveState = async (newState) => {
-    try {
-      await AsyncStorage.setItem('@glow_up_state', JSON.stringify(newState));
-    } catch (e) {
-      console.error('Failed to save state', e);
-    }
-  };
+  // Game Logic
+  const addExperience = (amount) => {
+    setProgress(prev => {
+      let newXp = prev.xp + amount;
+      let newLevel = prev.level;
+      let newXpToNext = prev.xpToNextLevel;
 
-  const updateQuest = (id, progress) => {
-    const newState = { ...state };
-    const quest = newState.quests.find(q => q.id === id);
-    if (quest && !quest.completed) {
-      quest.current += progress;
-      if (quest.current >= quest.goal) {
-        quest.current = quest.goal;
-        quest.completed = true;
-        addExp(quest.reward);
+      if (newXp >= newXpToNext) {
+        newLevel += 1;
+        newXp = newXp - newXpToNext;
+        newXpToNext = Math.floor(newXpToNext * 1.5);
       }
-      setState(newState);
-      saveState(newState);
-    }
+
+      return { level: newLevel, xp: newXp, xpToNextLevel: newXpToNext };
+    });
   };
 
-  const addExp = (amount) => {
-    const newState = { ...state };
-    newState.user.exp += amount;
-    if (newState.user.exp >= newState.user.expToNextLevel) {
-      newState.user.exp -= newState.user.expToNextLevel;
-      newState.user.level += 1;
-      newState.user.expToNextLevel = Math.floor(newState.user.expToNextLevel * 1.5);
-      // Level up logic
+  const completeTask = (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.completed) return;
+
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
+
+    if (task.stat) {
+      setStats(prev => ({ ...prev, [task.stat]: Math.min(prev[task.stat] + 2, 100) }));
     }
-    setState(newState);
-    saveState(newState);
+
+    const xpReward = task.xp || 20;
+    setBossHp(prev => Math.max(0, prev - (xpReward / 2)));
+    addExperience(xpReward);
   };
 
-  return { ...state, updateQuest, loading };
+  const nextBoss = () => {
+    const nextIdx = bossIndex + 1;
+    setBossIndex(nextIdx);
+    setBossHp(BOSSES[nextIdx % BOSSES.length].hp);
+  };
+
+  const addTask = (text, category, stat, xp) => {
+    const newTask = {
+      id: Date.now().toString(),
+      text,
+      category,
+      stat,
+      xp,
+      completed: false
+    };
+    setTasks(prev => [...prev, newTask]);
+  };
+
+  const deleteTask = (taskId) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  };
+
+  const getRandomQuote = () => {
+    return QUOTES[Math.floor(Math.random() * QUOTES.length)];
+  };
+
+  const completeOnboarding = (pseudo, sexe) => {
+    setUser(prev => ({ ...prev, pseudo, sexe, onboardingComplete: true }));
+  };
+
+  const relapse = (addictionId) => {
+    setUser(prev => ({
+      ...prev,
+      addictions: prev.addictions.map(a => 
+        a.id === addictionId ? { ...a, lastRelapse: new Date().toISOString() } : a
+      )
+    }));
+    // Penalty: lose 10% of total XP
+    setProgress(prev => ({
+      ...prev,
+      xp: Math.max(0, prev.xp - Math.floor(prev.xpToNextLevel * 0.1))
+    }));
+  };
+
+  const addAddiction = (name, icon) => {
+    const id = name.toLowerCase().replace(/\s+/g, '-');
+    setUser(prev => ({
+      ...prev,
+      addictions: [...prev.addictions, { id, name, icon, lastRelapse: new Date().toISOString(), bestStreak: 0 }]
+    }));
+  };
+
+  return {
+    user,
+    stats,
+    progress: { ...progress, rank },
+    tasks,
+    boss: currentBoss,
+    streak,
+    loading,
+    completeTask,
+    addTask,
+    deleteTask,
+    nextBoss,
+    getRandomQuote,
+    completeOnboarding,
+    relapse,
+    addAddiction
+  };
 };

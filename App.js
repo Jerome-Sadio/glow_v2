@@ -1,266 +1,247 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TouchableOpacity, 
+  SafeAreaView, 
+  StatusBar,
+  ScrollView,
+  TextInput,
+  Dimensions
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SystemHUD } from './src/components/SystemHUD';
-import { Theme } from './src/constants/Theme';
+import { 
+  Home, 
+  ListTodo, 
+  Swords, 
+  LayoutDashboard, 
+  User as UserIcon,
+  Flame
+} from 'lucide-react-native';
+
+// Hooks & Logic
 import { useGameState } from './src/hooks/useGameState';
 
-const { width } = Dimensions.get('window');
+// Components
+import StatWheel from './src/components/StatWheel';
+import QuestView from './src/components/QuestView';
+import BossView from './src/components/BossView';
+import CombatView from './src/components/CombatView';
+import ProfileView from './src/components/ProfileView';
 
-export default function App() {
-  const { user, stats, quests, updateQuest, loading } = useGameState();
+const App = () => {
+  const { 
+    user, 
+    stats, 
+    progress, 
+    tasks, 
+    boss, 
+    streak, 
+    loading, 
+    completeTask, 
+    addTask,
+    deleteTask,
+    nextBoss, 
+    getRandomQuote, 
+    completeOnboarding,
+    relapse,
+    addAddiction
+  } = useGameState();
 
-  if (loading) {
+  const [activeTab, setActiveTab] = useState('home');
+  const [currentQuote, setCurrentQuote] = useState('');
+  
+  // Onboarding States
+  const [pseudo, setPseudo] = useState('');
+  const [sexe, setSexe] = useState('homme'); 
+
+  useEffect(() => {
+    setCurrentQuote(getRandomQuote());
+  }, []);
+
+  if (loading) return null;
+
+  // --- ECRAN ONBOARDING ---
+  if (!user.onboardingComplete) {
     return (
-      <View style={[styles.container, { backgroundColor: Theme.colors.background }]}>
-        <Text style={{ color: Theme.colors.primary }}>INITIALIZING SYSTEM...</Text>
-      </View>
+      <SafeAreaView style={styles.onboardingContainer}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={['#0a0a0a', '#05101a']} style={StyleSheet.absoluteFill} />
+        
+        <View style={styles.onboardingContent}>
+          <Text style={styles.hunterTitle}>ÉVEIL DU SYSTÈME</Text>
+          <Text style={styles.hunterSubtitle}>INITIALISATION DU PROFIL CHASSEUR</Text>
+          
+          <View style={styles.inputCard}>
+            <Text style={styles.label}>PSEUDO DU CHASSEUR</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: Sung Jin-Woo"
+              placeholderTextColor="#333"
+              value={pseudo}
+              onChangeText={setPseudo}
+            />
+          </View>
+
+          <View style={styles.sexSelection}>
+            <TouchableOpacity 
+              style={[styles.sexBtn, sexe === 'homme' && styles.sexBtnActive]}
+              onPress={() => setSexe('homme')}
+            >
+              <Text style={[styles.sexBtnText, sexe === 'homme' && styles.sexBtnTextActive]}>HOMME</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.sexBtn, sexe === 'femme' && styles.sexBtnActive]}
+              onPress={() => setSexe('femme')}
+            >
+              <Text style={[styles.sexBtnText, sexe === 'femme' && styles.sexBtnTextActive]}>FEMME</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.startBtn}
+            onPress={() => pseudo.trim() && completeOnboarding(pseudo, sexe)}
+          >
+            <Text style={styles.startBtnText}>ENTRER DANS LE SYSTÈME</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  const expProgress = (user.exp / user.expToNextLevel) * 100;
+  // --- RENDER CONTENT BY TAB ---
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return (
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.rankText}>RANG {progress.rank || 'E'}</Text>
+                <Text style={styles.userName}>{user.pseudo}</Text>
+              </View>
+              <View style={styles.streakBadge}>
+                <Flame size={16} color="#ffa500" />
+                <Text style={styles.streakText}>{streak} JOURS</Text>
+              </View>
+            </View>
+
+            <View style={styles.wheelSection}>
+              <StatWheel stats={stats} userSexe={user.sexe} />
+            </View>
+
+            <View style={styles.quoteBox}>
+              <LinearGradient colors={['rgba(0,242,255,0.05)', 'transparent']} style={StyleSheet.absoluteFill} />
+              <Text style={styles.quoteText}>"{currentQuote}"</Text>
+              <View style={styles.scanLine} />
+            </View>
+
+            <View style={styles.expSection}>
+              <View style={styles.expHeader}>
+                <Text style={styles.levelText}>LVL. {progress.level}</Text>
+                <Text style={styles.expValue}>{progress.xp} / {progress.xpToNextLevel}</Text>
+              </View>
+              <View style={styles.expBg}>
+                <View style={[styles.expFill, { width: `${(progress.xp / progress.xpToNextLevel) * 100}%` }]} />
+              </View>
+            </View>
+          </ScrollView>
+        );
+      case 'quests':
+        return <QuestView tasks={tasks} addTask={addTask} completeTask={completeTask} deleteTask={deleteTask} />;
+      case 'boss':
+        return <BossView boss={boss} nextBoss={nextBoss} />;
+      case 'combat':
+        return <CombatView user={user} relapse={relapse} addAddiction={addAddiction} />;
+      case 'profile':
+        return <ProfileView user={user} progress={progress} stats={stats} />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <SystemHUD title="[ HUNTER STATUS ]">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* User Profile Section */}
-        <View style={styles.profileCard}>
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rankLabel}>RANK</Text>
-              <Text style={styles.rankValue}>{user.rank}</Text>
-            </View>
-            <View style={styles.levelContainer}>
-              <Text style={styles.levelLabel}>LEVEL</Text>
-              <Text style={styles.levelValue}>{user.level}</Text>
-            </View>
-          </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient colors={['#0a0a0a', '#050505']} style={StyleSheet.absoluteFill} />
+      
+      <View style={styles.mainArea}>
+        {renderContent()}
+      </View>
 
-          <Text style={styles.userName}>{user.name}</Text>
-
-          {/* EXP Bar */}
-          <View style={styles.expBarContainer}>
-            <View style={styles.expBarLabelRow}>
-              <Text style={styles.expLabel}>EXP</Text>
-              <Text style={styles.expProgressText}>{user.exp} / {user.expToNextLevel}</Text>
-            </View>
-            <View style={styles.expBarBackground}>
-              <LinearGradient
-                colors={[Theme.colors.primary, Theme.colors.secondary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.expBarFill, { width: `${expProgress}%` }]}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Stats Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>[ ATTRIBUTES ]</Text>
-        </View>
-        <View style={styles.statsGrid}>
-          {Object.entries(stats).map(([key, value]) => (
-            <View key={key} style={styles.statItem}>
-              <Text style={styles.statLabel}>{key.toUpperCase()}</Text>
-              <Text style={styles.statValue}>{value}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Quests Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>[ DAILY QUESTS ]</Text>
-        </View>
-        {quests.map((quest) => (
+      {/* Tab Navigation */}
+      <View style={styles.tabNav}>
+        {[
+          { id: 'home', icon: Home, label: 'ACCUEIL' },
+          { id: 'quests', icon: ListTodo, label: 'QUÊTES' },
+          { id: 'combat', icon: Swords, label: 'COMBAT' },
+          { id: 'boss', icon: LayoutDashboard, label: 'BOSS' },
+          { id: 'profile', icon: UserIcon, label: 'PROFIL' }
+        ].map(tab => (
           <TouchableOpacity 
-            key={quest.id} 
-            style={[styles.questCard, quest.completed && styles.questCompleted]}
-            onPress={() => updateQuest(quest.id, 10)}
-            activeOpacity={0.7}
+            key={tab.id}
+            style={[styles.tabItem, activeTab === tab.id && styles.tabItemActive]}
+            onPress={() => setActiveTab(tab.id)}
           >
-            <View style={styles.questInfo}>
-              <Text style={styles.questTitle}>{quest.title}</Text>
-              <Text style={styles.questProgress}>
-                {quest.current} / {quest.goal}
-              </Text>
-            </View>
-            <View style={styles.questReward}>
-              <Text style={styles.rewardLabel}>REWARD</Text>
-              <Text style={styles.rewardValue}>EXP +{quest.reward}</Text>
-            </View>
-            {quest.completed && <View style={styles.checkIcon}><Text style={styles.checkText}>✓</Text></View>}
+            <tab.icon size={20} color={activeTab === tab.id ? '#00f2ff' : '#555'} />
+            <Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>{tab.label}</Text>
           </TouchableOpacity>
         ))}
-        
-        <View style={{ height: 40 }} />
-      </ScrollView>
-      <StatusBar style="light" />
-    </SystemHUD>
+      </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    padding: Theme.spacing.md,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0,242,255,0.2)',
-    marginBottom: Theme.spacing.lg,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  rankLabel: {
-    color: Theme.colors.primary,
-    fontSize: 12,
-    letterSpacing: 1,
-  },
-  rankValue: {
-    color: Theme.colors.accent,
-    fontSize: 32,
-    fontWeight: 'bold',
-    textShadowColor: Theme.colors.primary,
-    textShadowRadius: 5,
-  },
-  levelContainer: {
-    alignItems: 'flex-end',
-  },
-  levelLabel: {
-    color: Theme.colors.primary,
-    fontSize: 12,
-    letterSpacing: 1,
-  },
-  levelValue: {
-    color: Theme.colors.accent,
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  userName: {
-    color: Theme.colors.accent,
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: Theme.spacing.sm,
-    letterSpacing: 2,
-    textAlign: 'center',
-  },
-  expBarContainer: {
-    marginTop: Theme.spacing.lg,
-  },
-  expBarLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  expLabel: {
-    color: Theme.colors.primary,
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  expProgressText: {
-    color: Theme.colors.textDim,
-    fontSize: 10,
-  },
-  expBarBackground: {
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  expBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  sectionHeader: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,242,255,0.3)',
-    marginBottom: Theme.spacing.md,
-    paddingBottom: 4,
-  },
-  sectionTitle: {
-    color: Theme.colors.primary,
-    fontSize: 14,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: Theme.spacing.lg,
-  },
-  statItem: {
-    width: '48%',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    padding: Theme.spacing.sm,
-    borderRadius: 4,
-    marginBottom: Theme.spacing.sm,
-    borderLeftWidth: 2,
-    borderLeftColor: Theme.colors.secondary,
-  },
-  statLabel: {
-    color: Theme.colors.textDim,
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  statValue: {
-    color: Theme.colors.accent,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  questCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    padding: Theme.spacing.md,
-    borderRadius: 4,
-    marginBottom: Theme.spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  questCompleted: {
-    borderColor: Theme.colors.success,
-    opacity: 0.6,
-  },
-  questInfo: {
-    flex: 1,
-  },
-  questTitle: {
-    color: Theme.colors.accent,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  questProgress: {
-    color: Theme.colors.textDim,
-    fontSize: 12,
-  },
-  questReward: {
-    alignItems: 'flex-end',
-  },
-  rewardLabel: {
-    color: Theme.colors.primary,
-    fontSize: 8,
-  },
-  rewardValue: {
-    color: Theme.colors.success,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  checkIcon: {
-    marginLeft: Theme.spacing.sm,
-  },
-  checkText: {
-    color: Theme.colors.success,
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#000' },
+  mainArea: { flex: 1 },
+  scrollContent: { padding: 20, paddingBottom: 100 },
+  
+  // Onboarding
+  onboardingContainer: { flex: 1, justifyContent: 'center' },
+  onboardingContent: { padding: 30, alignItems: 'center' },
+  hunterTitle: { fontSize: 32, fontWeight: '900', color: '#00f2ff', fontStyle: 'italic' },
+  hunterSubtitle: { fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 4, marginBottom: 40 },
+  inputCard: { width: '100%', marginBottom: 30 },
+  label: { fontSize: 10, color: '#00f2ff', fontWeight: 'bold', marginBottom: 10, letterSpacing: 2 },
+  input: { backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', padding: 15, borderRadius: 5, borderWidth: 1, borderColor: 'rgba(0,242,255,0.2)' },
+  sexSelection: { flexDirection: 'row', gap: 10, marginBottom: 40 },
+  sexBtn: { flex: 1, padding: 15, borderWidth: 1, borderColor: '#333', alignItems: 'center' },
+  sexBtnActive: { borderColor: '#00f2ff', backgroundColor: 'rgba(0,242,255,0.1)' },
+  sexBtnText: { color: '#555', fontWeight: 'bold' },
+  sexBtnTextActive: { color: '#00f2ff' },
+  startBtn: { backgroundColor: '#00f2ff', paddingVertical: 18, width: '100%', alignItems: 'center' },
+  startBtnText: { fontWeight: '900', color: '#000', fontSize: 16 },
+
+  // Header
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  rankText: { color: '#00f2ff', fontSize: 10, fontWeight: '900', letterSpacing: 2 },
+  userName: { color: '#fff', fontSize: 28, fontWeight: '900', fontStyle: 'italic' },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,165,0,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  streakText: { color: '#ffa500', fontWeight: '900', fontSize: 12 },
+
+  // Wheel
+  wheelSection: { alignItems: 'center', marginVertical: 30 },
+
+  // Quote
+  quoteBox: { backgroundColor: 'rgba(255,255,255,0.02)', padding: 25, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(0,242,255,0.1)', overflow: 'hidden' },
+  quoteText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontStyle: 'italic', textAlign: 'center', lineHeight: 22 },
+  scanLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(0,242,255,0.3)' },
+
+  // EXP
+  expSection: { marginTop: 30 },
+  expHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  levelText: { color: '#00f2ff', fontWeight: 'bold' },
+  expValue: { color: '#555', fontSize: 12 },
+  expBg: { height: 6, backgroundColor: '#111', borderRadius: 3, overflow: 'hidden' },
+  expFill: { height: '100%', backgroundColor: '#00f2ff' },
+
+  // Nav
+  tabNav: { flexDirection: 'row', backgroundColor: '#050505', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingVertical: 10, position: 'absolute', bottom: 0, left: 0, right: 0 },
+  tabItem: { flex: 1, alignItems: 'center', gap: 4 },
+  tabLabel: { fontSize: 8, color: '#555', fontWeight: 'bold' },
+  tabLabelActive: { color: '#00f2ff' },
 });
+
+export default App;
