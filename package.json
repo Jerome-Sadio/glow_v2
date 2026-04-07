@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~53.0.0",
+    "expo": "~52.0.0",
     "expo-build-properties": "^55.0.12",
     "expo-linear-gradient": "~14.0.0",
     "expo-status-bar": "~2.1.0",
@@ -20,11 +20,7 @@
     "react-native-svg": "^15.12.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0",
-    "expo-modules-autolinking": "~1.11.1"
-  },
-  "overrides": {
-    "expo-modules-autolinking": "~1.11.1"
+    "@babel/core": "^7.20.0"
   },
   "private": true
 }
