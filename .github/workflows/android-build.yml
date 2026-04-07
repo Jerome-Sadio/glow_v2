@@ -13,10 +13,10 @@ jobs:
       - name: 🏗 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          node-version: 20
+          gradle-version: 8.8
           cache: 'npm'
 
       - name: ☕ Setup JDK 17
