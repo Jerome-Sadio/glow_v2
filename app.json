@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "GLOW UP",
-    "slug": "glow_v2",
+    "name": "GlowUp",
+    "slug": "GlowUp",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "assets/icon.png",
@@ -21,8 +21,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
-      },
-      "largeHeap": true
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
