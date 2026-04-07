@@ -18,12 +18,14 @@ import {
   ChevronRight
 } from 'lucide-react-native';
 
+import { MALE_AVATAR_BASE64, FEMALE_AVATAR_BASE64 } from '../constants/AvatarsBase64';
+
 const { width } = Dimensions.get('window');
 
 const ProfileView = ({ user, progress, stats }) => {
   const avatarImg = user.sexe === 'femme' 
-    ? require('../../assets/pfp_female.png') 
-    : require('../../assets/pfp_male.png');
+    ? { uri: FEMALE_AVATAR_BASE64 } 
+    : { uri: MALE_AVATAR_BASE64 };
 
   const statEntries = [
     { label: 'FORCE PHYSIQUE', value: stats.force, color: '#FF0055' },
