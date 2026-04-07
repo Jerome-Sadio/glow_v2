@@ -23,5 +23,8 @@
     "@babel/core": "^7.20.0",
     "expo-modules-autolinking": "~1.11.1"
   },
+  "overrides": {
+    "expo-modules-autolinking": "~1.11.1"
+  },
   "private": true
 }
