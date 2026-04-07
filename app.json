@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.monalisa.glowup",
+      "largeHeap": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
