@@ -31,8 +31,11 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: 🛠️ Expo Prebuild
-        run: npx expo prebuild --platform android --no-install --non-interactive
+      - name: 🛠 Prebuild
+        run: npx expo prebuild --platform android --no-install
+
+      - name: 🛠 Force Gradle 8.8 Wrapper
+        run: sed -i 's/gradle-8.13-bin.zip/gradle-8.8-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties
 
       - name: 🧪 Verify & Patch Android Folder
         run: |
