@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
       },
-      "edgeToEdgeEnabled": true
+      "largeHeap": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
