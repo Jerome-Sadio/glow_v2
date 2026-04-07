@@ -32,7 +32,10 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: 🛠️ Expo Prebuild
-        run: npx expo prebuild --platform android --no-install
+        run: npx expo prebuild --platform android --no-install --non-interactive
+
+      - name: 🧪 Verify Android Folder
+        run: ls -la android
 
       - name: 🏗️ Build Android Release
         run: |
