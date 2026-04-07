@@ -16,7 +16,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.8
+          gradle-version: 8.10.2
           cache: 'npm'
 
       - name: ☕ Setup JDK 17
@@ -34,8 +34,8 @@ jobs:
       - name: 🛠 Prebuild
         run: npx expo prebuild --platform android --no-install
 
-      - name: 🛠 Force Gradle 8.8 Wrapper
-        run: sed -i 's/gradle-8.13-bin.zip/gradle-8.8-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+      - name: 🛠 Force Gradle 8.10.2 Wrapper
+        run: sed -i 's/gradle-.*-bin.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties
 
       - name: 🧪 Verify & Patch Android Folder
         run: |
