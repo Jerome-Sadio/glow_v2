@@ -31,8 +31,8 @@ const STAT_CONFIG = [
 
 const StatWheel = ({ stats, userSexe }) => {
   const avatarImg = userSexe === 'femme' 
-    ? require('../../assets/avatar_female.png') 
-    : require('../../assets/avatar_male.png');
+    ? require('../../assets/pfp_female.png') 
+    : require('../../assets/pfp_male.png');
 
   return (
     <View style={styles.container}>

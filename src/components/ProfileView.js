@@ -22,8 +22,8 @@ const { width } = Dimensions.get('window');
 
 const ProfileView = ({ user, progress, stats }) => {
   const avatarImg = user.sexe === 'femme' 
-    ? require('../../assets/avatar_female.png') 
-    : require('../../assets/avatar_male.png');
+    ? require('../../assets/pfp_female.png') 
+    : require('../../assets/pfp_male.png');
 
   const statEntries = [
     { label: 'FORCE PHYSIQUE', value: stats.force, color: '#FF0055' },
