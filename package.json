@@ -19,5 +19,9 @@
     "react-native": "0.74.5",
     "react-native-svg": "^15.12.1"
   },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "expo-modules-autolinking": "~1.11.1"
+  },
   "private": true
 }
