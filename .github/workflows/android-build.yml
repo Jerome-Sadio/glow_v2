@@ -35,7 +35,7 @@ jobs:
         run: npx expo prebuild --platform android --no-install
 
       - name: 🛠 Force Gradle 8.8 Wrapper
-        run: sed -i 's/gradle-.*-bin.zip/gradle-8.8-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+        run: sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.8-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
 
       - name: 🧪 Verify & Patch Android Folder
         run: |
