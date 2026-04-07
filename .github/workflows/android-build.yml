@@ -34,8 +34,10 @@ jobs:
       - name: 🛠️ Expo Prebuild
         run: npx expo prebuild --platform android --no-install --non-interactive
 
-      - name: 🧪 Verify Android Folder
-        run: ls -la android
+      - name: 🧪 Verify & Patch Android Folder
+        run: |
+          ls -la android
+          sed -i '/enableBundleCompression/d' android/app/build.gradle
 
       - name: 🏗️ Build Android Release
         run: |
