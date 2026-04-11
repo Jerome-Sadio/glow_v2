@@ -43,9 +43,12 @@ jobs:
         run: ls -la android
 
       - name: 🏗️ Build Android Release
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           cd android
           chmod +x gradlew
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" >> gradle.properties
           ./gradlew assembleRelease --no-daemon
 
       - name: 🚀 Upload APK

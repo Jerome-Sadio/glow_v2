@@ -11,7 +11,8 @@ import {
   Palette, 
   Zap 
 } from 'lucide-react-native';
-import { MALE_AVATAR_BASE64, FEMALE_AVATAR_BASE64 } from '../constants/AvatarsBase64';
+const MALE_AVATAR = require('../../assets/male_avatar.png');
+const FEMALE_AVATAR = require('../../assets/female_avatar.png');
 
 const { width } = Dimensions.get('window');
 const WHEEL_SIZE = width * 0.9;
@@ -31,9 +32,7 @@ const STAT_CONFIG = [
 ];
 
 const StatWheel = ({ stats, userSexe }) => {
-  const avatarImg = userSexe === 'femme' 
-    ? { uri: FEMALE_AVATAR_BASE64 } 
-    : { uri: MALE_AVATAR_BASE64 };
+  const avatarImg = userSexe === 'femme' ? FEMALE_AVATAR : MALE_AVATAR;
 
   return (
     <View style={styles.container}>
