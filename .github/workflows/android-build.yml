@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: "--max-old-space-size=4096"
     steps:
       - name: 🏗 Checkout repository
         uses: actions/checkout@v4
@@ -31,24 +33,22 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: 🔄 Sync Expo dependencies
+        run: npx expo install --fix --yes
+
       - name: 🛠 Clean & Prebuild
         run: |
           rm -rf android
           npx expo prebuild --platform android --no-install
 
-      - name: 🛠 Force Gradle 8.8 Wrapper (Bulldozer)
-        run: sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.8-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
-
-      - name: 🧪 Verify Android Folder
-        run: ls -la android
+      - name: ⚙️ Configure Gradle Memory
+        run: |
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" >> android/gradle.properties
 
       - name: 🏗️ Build Android Release
-        env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           cd android
           chmod +x gradlew
-          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" >> gradle.properties
           ./gradlew assembleRelease --no-daemon
 
       - name: 🚀 Upload APK
