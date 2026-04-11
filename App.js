@@ -37,6 +37,7 @@ const App = () => {
     progress, 
     tasks, 
     boss, 
+    depressionHp,
     streak, 
     loading, 
     completeTask, 
@@ -155,7 +156,7 @@ const App = () => {
       case 'boss':
         return <BossView boss={boss} nextBoss={nextBoss} />;
       case 'combat':
-        return <CombatView user={user} relapse={relapse} addAddiction={addAddiction} />;
+        return <CombatView user={user} relapse={relapse} addAddiction={addAddiction} depressionHpState={depressionHp} />;
       case 'profile':
         return <ProfileView 
           user={user} 

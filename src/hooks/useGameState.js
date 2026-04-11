@@ -43,6 +43,7 @@ export const useGameState = () => {
   const [unlockedTitles, setUnlockedTitles] = useState(['novice']);
   const [bossIndex, setBossIndex] = useState(0);
   const [bossHp, setBossHp] = useState(BOSSES[0].hp);
+  const [depressionHp, setDepressionHp] = useState(BOSSES[4].hp);
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -72,6 +73,7 @@ export const useGameState = () => {
         const savedTitles = await AsyncStorage.getItem('@glow_titles');
         const savedBossIdx = await AsyncStorage.getItem('@glow_boss_idx');
         const savedBossHp = await AsyncStorage.getItem('@glow_boss_hp');
+        const savedDepressionHp = await AsyncStorage.getItem('@glow_depression_hp');
         const savedStreak = await AsyncStorage.getItem('@glow_streak');
 
         if (savedUser) setUser(JSON.parse(savedUser));
@@ -82,6 +84,7 @@ export const useGameState = () => {
         if (savedTitles) setUnlockedTitles(JSON.parse(savedTitles));
         if (savedBossIdx) setBossIndex(parseInt(savedBossIdx));
         if (savedBossHp) setBossHp(parseFloat(savedBossHp));
+        if (savedDepressionHp) setDepressionHp(parseFloat(savedDepressionHp));
         if (savedStreak) setStreak(parseInt(savedStreak));
       } catch (e) {
         console.error("Error loading state", e);
@@ -105,13 +108,14 @@ export const useGameState = () => {
         await AsyncStorage.setItem('@glow_titles', JSON.stringify(unlockedTitles));
         await AsyncStorage.setItem('@glow_boss_idx', bossIndex.toString());
         await AsyncStorage.setItem('@glow_boss_hp', bossHp.toString());
+        await AsyncStorage.setItem('@glow_depression_hp', depressionHp.toString());
         await AsyncStorage.setItem('@glow_streak', streak.toString());
       } catch (e) {
         console.error("Error saving state", e);
       }
     };
     saveAll();
-  }, [user, stats, progress, tasks, history, unlockedTitles, bossIndex, bossHp, streak, loading]);
+  }, [user, stats, progress, tasks, history, unlockedTitles, bossIndex, bossHp, depressionHp, streak, loading]);
 
   // Title Unlocking Logic
   useEffect(() => {
@@ -158,7 +162,26 @@ export const useGameState = () => {
     }
 
     const xpReward = task.xp || 20;
-    setBossHp(prev => Math.max(0, prev - (xpReward / 2)));
+    
+    // Damage current boss
+    setBossHp(prev => {
+      const newHp = Math.max(0, prev - (xpReward / 2));
+      // Procrastination (Boss 0) restarts immediately
+      if (newHp === 0 && bossIndex === 0) {
+        return BOSSES[0].hp;
+      }
+      return newHp;
+    });
+
+    // Damage Depression Boss (Eternal Battle)
+    // Small damage per task completed to simulate a year-long battle
+    setDepressionHp(prev => {
+      const newHp = Math.max(0, prev - (xpReward / 20));
+      // Depression also restarts if it ever reaches 0
+      if (newHp === 0) return BOSSES[4].hp;
+      return newHp;
+    });
+
     addExperience(xpReward);
   };
 
@@ -222,6 +245,7 @@ export const useGameState = () => {
     history,
     unlockedTitles,
     boss: currentBoss,
+    depressionHp,
     streak,
     loading,
     completeTask,

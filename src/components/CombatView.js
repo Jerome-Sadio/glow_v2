@@ -19,13 +19,14 @@ import {
 
 const { width } = Dimensions.get('window');
 
-const CombatView = ({ user, relapse, addAddiction }) => {
+const CombatView = ({ user, relapse, addAddiction, depressionHpState }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('🔥');
 
   // Depression Boss (Mock logic)
-  const depressionHp = 7450; 
+  // Depression Boss (Dynamic)
+  const depressionHp = depressionHpState || 10000; 
   const depressionMaxHp = 10000;
   const depressionPercent = (depressionHp / depressionMaxHp) * 100;
 
@@ -171,8 +172,8 @@ const styles = StyleSheet.create({
   hpLabels: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   hpTitle: { color: 'rgba(255,255,255,0.4)', fontSize: 9, fontWeight: '900', letterSpacing: 2 },
   hpValue: { color: '#4f46e5', fontSize: 12, fontWeight: 'bold' },
-  hpBg: { height: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  hpFill: { height: '100%', borderRadius: 4 },
+  hpBg: { width: '100%', height: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 5, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  hpFill: { height: '100%', borderRadius: 5 },
   
   bossQuote: { backgroundColor: 'rgba(79,70,229,0.05)', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(79,70,229,0.1)' },
   quoteText: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontStyle: 'italic', textAlign: 'center', lineHeight: 18 },
