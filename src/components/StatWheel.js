@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Image, Dimensions, Animated } from 'react-native';
-import Svg, { Circle, G, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, G, Path, Defs, LinearGradient, Stop, Text } from 'react-native-svg';
 import { 
   Sword, 
   Brain, 
@@ -70,6 +70,13 @@ const StatWheel = ({ stats, userSexe }) => {
             const xVal = RADIUS * Math.cos(valRad);
             const yVal = RADIUS * Math.sin(valRad);
 
+            // Label position (slightly outside)
+            const labelAngle = startAngle + (segmentAngle * 0.4);
+            const labelRad = (labelAngle - 90) * (Math.PI / 180);
+            const labelRadius = RADIUS + 25;
+            const lx = labelRadius * Math.cos(labelRad);
+            const ly = labelRadius * Math.sin(labelRad);
+
             const largeArc = 0;
 
             return (
@@ -90,6 +97,19 @@ const StatWheel = ({ stats, userSexe }) => {
                   strokeWidth={STROKE_WIDTH}
                   strokeLinecap="round"
                 />
+                {/* Label & Value */}
+                <Text
+                  x={lx}
+                  y={ly}
+                  fill={stat.color}
+                  fontSize="10"
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  alignmentBaseline="middle"
+                  fontStyle="italic"
+                >
+                  {stat.label.toUpperCase()} {value}
+                </Text>
               </G>
             );
           })}

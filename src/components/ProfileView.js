@@ -6,7 +6,9 @@ import {
   TouchableOpacity, 
   ScrollView,
   Image,
-  Dimensions
+  Dimensions,
+  Alert,
+  BackHandler
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -25,6 +27,21 @@ const { width } = Dimensions.get('window');
 
 const ProfileView = ({ user, progress, stats }) => {
   const avatarImg = user.sexe === 'femme' ? FEMALE_AVATAR : MALE_AVATAR;
+
+  const handleMenuPress = (label) => {
+    if (label === 'FERMER LE SYSTÈME') {
+      Alert.alert(
+        "ALERTE SYSTÈME",
+        "Voulez-vous vraiment fermer le système ?",
+        [
+          { text: "ANNULER", style: "cancel" },
+          { text: "FERMER", onPress: () => BackHandler.exitApp(), style: "destructive" }
+        ]
+      );
+    } else {
+      Alert.alert("SYSTÈME", `La fonction ${label} est en cours de synchronisation.`);
+    }
+  };
 
   const statEntries = [
     { label: 'FORCE PHYSIQUE', value: stats.force, color: '#FF0055' },
@@ -77,7 +94,11 @@ const ProfileView = ({ user, progress, stats }) => {
           { icon: Settings, label: 'CONFIGURATION SYSTÈME', color: '#fff' },
           { icon: LogOut, label: 'FERMER LE SYSTÈME', color: '#ff0055' }
         ].map((item, i) => (
-          <TouchableOpacity key={i} style={styles.menuItem}>
+          <TouchableOpacity 
+            key={i} 
+            style={styles.menuItem}
+            onPress={() => handleMenuPress(item.label)}
+          >
             <View style={styles.menuLeft}>
               <item.icon size={20} color={item.color} />
               <Text style={styles.menuLabel}>{item.label}</Text>
