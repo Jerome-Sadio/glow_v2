@@ -22,7 +22,9 @@ import {
   Coins,
   Heart,
   Palette,
-  Zap
+  Zap,
+  Clock,
+  CalendarDays
 } from 'lucide-react-native';
 
 const CATEGORIES = [
@@ -36,23 +38,54 @@ const CATEGORIES = [
   { id: 'mental', label: 'Mental', icon: Zap, color: '#00D2D3' },
 ];
 
+const PRIORITIES = [
+  { id: 'urgent-important', label: 'Urgent & Important', color: '#ff0055' },
+  { id: 'important', label: 'Important, Non-Urgent', color: '#ffa500' },
+  { id: 'urgent', label: 'Urgent, Non-Important', color: '#4f46e5' },
+  { id: 'normal', label: 'Non-Urgent, Non-Important', color: '#4caf50' },
+];
+
+const DAYS = [
+  { id: 1, label: 'L' },
+  { id: 2, label: 'M' },
+  { id: 3, label: 'M' },
+  { id: 4, label: 'J' },
+  { id: 5, label: 'V' },
+  { id: 6, label: 'S' },
+  { id: 0, label: 'D' },
+];
+
 const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
   const [selectedCat, setSelectedCat] = useState('discipline');
+  const [hour, setHour] = useState('08');
+  const [minute, setMinute] = useState('30');
+  const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5, 6, 0]);
+  const [priority, setPriority] = useState('normal');
+
+  const toggleDay = (dayId) => {
+    if (selectedDays.includes(dayId)) {
+      setSelectedDays(prev => prev.filter(d => d !== dayId));
+    } else {
+      setSelectedDays(prev => [...prev, dayId]);
+    }
+  };
 
   const handleCreate = () => {
     if (!newTaskText.trim()) return;
-    addTask(newTaskText, selectedCat, selectedCat, 30);
+    const time = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+    addTask(newTaskText, selectedCat, selectedCat, 30, time, selectedDays, priority);
     setNewTaskText('');
     setShowAdd(false);
   };
 
   const renderTask = ({ item }) => {
     const cat = CATEGORIES.find(c => c.id === item.category) || CATEGORIES[0];
+    const prioRecord = PRIORITIES.find(p => p.id === item.priority) || PRIORITIES[3];
     
     return (
-      <View style={[styles.taskItem, item.completed && styles.taskCompleted]}>
+      <View style={[styles.taskItem, item.completed && styles.taskCompleted, { borderLeftColor: prioRecord.color, borderLeftWidth: 4 }]}>
         <View style={styles.taskLeft}>
           <TouchableOpacity 
             onPress={() => completeTask(item.id)}
@@ -74,6 +107,15 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
               </View>
               <Text style={styles.catLabel}>{cat.label}</Text>
             </View>
+
+            {(item.time || item.days) && (
+              <View style={styles.scheduleRow}>
+                <Clock size={10} color="#444" />
+                <Text style={styles.scheduleText}>{item.time || "--:--"}</Text>
+                <View style={styles.dot} />
+                <Text style={styles.scheduleText}>{item.days?.length === 7 ? "Quotidien" : item.days?.map(d => DAYS.find(day => day.id === d)?.label).join(' ')}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -122,6 +164,57 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
             ))}
           </View>
 
+          <View style={styles.formRow}>
+            <View style={styles.timeSection}>
+              <Text style={styles.subLabel}>HEURE</Text>
+              <View style={styles.timeInputs}>
+                <TextInput 
+                  style={styles.timeInput} 
+                  value={hour} 
+                  onChangeText={v => setHour(v.slice(0, 2))}
+                  keyboardType="numeric"
+                  maxLength={2}
+                />
+                <Text style={styles.timeDivider}>:</Text>
+                <TextInput 
+                  style={styles.timeInput} 
+                  value={minute} 
+                  onChangeText={v => setMinute(v.slice(0, 2))}
+                  keyboardType="numeric"
+                  maxLength={2}
+                />
+              </View>
+            </View>
+
+            <View style={styles.prioSection}>
+              <Text style={styles.subLabel}>PRIORITÉ</Text>
+              <View style={styles.prioGrid}>
+                {PRIORITIES.map(p => (
+                  <TouchableOpacity
+                    key={p.id}
+                    onPress={() => setPriority(p.id)}
+                    style={[styles.prioBtn, { backgroundColor: p.color, opacity: priority === p.id ? 1 : 0.2 }]}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.daysSection}>
+            <Text style={styles.subLabel}>JOURS RECURRENT</Text>
+            <View style={styles.daysGrid}>
+              {DAYS.map(day => (
+                <TouchableOpacity
+                  key={day.id}
+                  onPress={() => toggleDay(day.id)}
+                  style={[styles.dayCircle, selectedDays.includes(day.id) && styles.dayCircleActive]}
+                >
+                  <Text style={[styles.dayLabel, selectedDays.includes(day.id) && styles.dayLabelActive]}>{day.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           <TouchableOpacity 
             style={[styles.createBtn, !newTaskText.trim() && { opacity: 0.3 }]}
             onPress={handleCreate}
@@ -131,6 +224,16 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Legend */}
+      <View style={styles.legend}>
+        {PRIORITIES.map(p => (
+          <View key={p.id} style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: p.color }]} />
+            <Text style={styles.legendText}>{p.label.split(',')[0]}</Text>
+          </View>
+        ))}
+      </View>
 
       <FlatList
         data={tasks}
@@ -176,7 +279,35 @@ const styles = StyleSheet.create({
   
   deleteBtn: { padding: 10 },
   empty: { paddingVertical: 60, alignItems: 'center' },
-  emptyText: { color: '#333', textAlign: 'center', fontStyle: 'italic', lineHeight: 20 }
+  emptyText: { color: '#333', textAlign: 'center', fontStyle: 'italic', lineHeight: 20 },
+
+  // New Form Styles
+  formRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, gap: 15 },
+  subLabel: { fontSize: 8, color: '#444', fontWeight: '900', letterSpacing: 1, marginBottom: 8 },
+  timeSection: { flex: 1 },
+  timeInputs: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#000', borderRadius: 8, padding: 5, borderWidth: 1, borderColor: '#222' },
+  timeInput: { color: '#fff', fontSize: 16, fontWeight: 'bold', textAlign: 'center', width: 40 },
+  timeDivider: { color: '#444', fontSize: 16, marginHorizontal: 2 },
+  
+  prioSection: { flex: 1.5 },
+  prioGrid: { flexDirection: 'row', gap: 5 },
+  prioBtn: { flex: 1, height: 35, borderRadius: 6 },
+
+  daysSection: { marginBottom: 20 },
+  daysGrid: { flexDirection: 'row', justifyContent: 'space-between' },
+  dayCircle: { width: 35, height: 35, borderRadius: 18, borderWidth: 1, borderColor: '#222', alignItems: 'center', justifyContent: 'center' },
+  dayCircleActive: { borderColor: '#00f2ff', backgroundColor: 'rgba(0,242,255,0.05)' },
+  dayLabel: { color: '#333', fontSize: 10, fontWeight: '900' },
+  dayLabelActive: { color: '#00f2ff' },
+
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 15, marginBottom: 20, paddingHorizontal: 5 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 6, height: 6, borderRadius: 3 },
+  legendText: { color: '#444', fontSize: 8, fontWeight: 'bold' },
+
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
+  scheduleText: { color: '#444', fontSize: 9, fontWeight: 'bold' },
+  dot: { width: 2, height: 2, borderRadius: 1, backgroundColor: '#444' }
 });
 
 export default QuestView;

@@ -3,6 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BOSSES } from '../data/bosses';
 import { QUOTES } from '../data/quotes';
 import { TITLES } from '../data/titles';
+import { 
+  requestPermissions, 
+  scheduleTaskNotification, 
+  cancelTaskNotifications 
+} from '../services/NotificationService';
 
 const INITIAL_STATS = {
   force: 10,
@@ -129,6 +134,11 @@ export const useGameState = () => {
     }
   }, [progress, stats, bossIndex, streak, loading]);
 
+  // Handle Notifications Permissions
+  useEffect(() => {
+    requestPermissions();
+  }, []);
+
   // Game Logic
   const addExperience = (amount) => {
     setProgress(prev => {
@@ -156,6 +166,11 @@ export const useGameState = () => {
     const completedTask = { ...task, completed: true, completedAt: new Date().toISOString() };
     setHistory(prev => [completedTask, ...prev].slice(0, 100)); // Keep last 100
     setTasks(prev => prev.filter(t => t.id !== taskId));
+
+    // Cancel notifications
+    if (task.notificationIds) {
+      cancelTaskNotifications(task.notificationIds);
+    }
 
     if (task.stat) {
       setStats(prev => ({ ...prev, [task.stat]: Math.min(prev[task.stat] + 2, 100) }));
@@ -191,19 +206,35 @@ export const useGameState = () => {
     setBossHp(BOSSES[nextIdx % BOSSES.length].hp);
   };
 
-  const addTask = (text, category, stat, xp) => {
+  const addTask = async (text, category, stat, xp, time, days, priority) => {
+    const taskId = Date.now().toString();
     const newTask = {
-      id: Date.now().toString(),
+      id: taskId,
       text,
       category,
       stat,
       xp,
-      completed: false
+      time,
+      days,
+      priority, // 'urgent-important', 'important', 'urgent', 'normal'
+      completed: false,
+      notificationIds: []
     };
+
+    // Schedule notifications if time/days provided
+    if (time && days && days.length > 0) {
+      const ids = await scheduleTaskNotification(newTask);
+      if (ids) newTask.notificationIds = ids;
+    }
+
     setTasks(prev => [...prev, newTask]);
   };
 
   const deleteTask = (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.notificationIds) {
+      cancelTaskNotifications(task.notificationIds);
+    }
     setTasks(prev => prev.filter(t => t.id !== taskId));
   };
 
@@ -237,6 +268,35 @@ export const useGameState = () => {
     }));
   };
 
+  const updateProfile = (pseudo, sexe) => {
+    setUser(prev => ({ ...prev, pseudo, sexe }));
+  };
+
+  const resetGameState = async () => {
+    try {
+      const keys = [
+        '@glow_user', '@glow_stats', '@glow_progress', 
+        '@glow_tasks', '@glow_history', '@glow_titles', 
+        '@glow_boss_idx', '@glow_boss_hp', '@glow_depression_hp', '@glow_streak'
+      ];
+      await AsyncStorage.multiRemove(keys);
+      
+      // Reset local state to initial
+      setUser(INITIAL_USER);
+      setStats(INITIAL_STATS);
+      setProgress({ level: 1, xp: 0, xpToNextLevel: 100 });
+      setTasks(DEFAULT_TASKS);
+      setHistory([]);
+      setUnlockedTitles(['novice']);
+      setBossIndex(0);
+      setBossHp(BOSSES[0].hp);
+      setDepressionHp(BOSSES[4].hp);
+      setStreak(0);
+    } catch (e) {
+      console.error("Error resetting state", e);
+    }
+  };
+
   return {
     user,
     stats,
@@ -255,6 +315,8 @@ export const useGameState = () => {
     getRandomQuote,
     completeOnboarding,
     relapse,
-    addAddiction
+    addAddiction,
+    updateProfile,
+    resetGameState
   };
 };

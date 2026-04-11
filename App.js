@@ -49,7 +49,9 @@ const App = () => {
     relapse,
     addAddiction,
     history,
-    unlockedTitles
+    unlockedTitles,
+    updateProfile,
+    resetGameState
   } = useGameState();
 
   const [activeTab, setActiveTab] = useState('home');
@@ -164,6 +166,8 @@ const App = () => {
           stats={stats} 
           history={history}
           unlockedTitles={unlockedTitles}
+          updateProfile={updateProfile}
+          resetGameState={resetGameState}
         />;
       default:
         return null;

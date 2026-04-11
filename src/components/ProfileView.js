@@ -26,12 +26,14 @@ const FEMALE_AVATAR = require('../../assets/pfp_f.webp');
 
 import TitlesModal from './TitlesModal';
 import HistoryModal from './HistoryModal';
+import SettingsModal from './SettingsModal';
 
 const { width } = Dimensions.get('window');
 
-const ProfileView = ({ user, progress, stats, unlockedTitles, history }) => {
+const ProfileView = ({ user, progress, stats, unlockedTitles, history, updateProfile, resetGameState }) => {
   const [showTitles, setShowTitles] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
+  const [showSettings, setShowSettings] = React.useState(false);
   
   const avatarImg = user.sexe === 'femme' ? FEMALE_AVATAR : MALE_AVATAR;
 
@@ -49,6 +51,8 @@ const ProfileView = ({ user, progress, stats, unlockedTitles, history }) => {
       setShowTitles(true);
     } else if (label === 'ARCHIVES DES QUÊTES') {
       setShowHistory(true);
+    } else if (label === 'CONFIGURATION SYSTÈME') {
+      setShowSettings(true);
     } else {
       Alert.alert("SYSTÈME", `La fonction ${label} est en cours de synchronisation.`);
     }
@@ -131,6 +135,14 @@ const ProfileView = ({ user, progress, stats, unlockedTitles, history }) => {
         visible={showHistory} 
         onClose={() => setShowHistory(false)} 
         history={history || []} 
+      />
+
+      <SettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        user={user}
+        updateProfile={updateProfile}
+        resetGameState={resetGameState}
       />
     </ScrollView>
   );
