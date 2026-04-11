@@ -11,8 +11,8 @@ import {
   Palette, 
   Zap 
 } from 'lucide-react-native';
-const MALE_AVATAR = require('../../assets/male_avatar.png');
-const FEMALE_AVATAR = require('../../assets/female_avatar.png');
+const MALE_AVATAR = require('../../assets/pfp_m.png');
+const FEMALE_AVATAR = require('../../assets/pfp_f.png');
 
 const { width } = Dimensions.get('window');
 const WHEEL_SIZE = width * 0.9;
