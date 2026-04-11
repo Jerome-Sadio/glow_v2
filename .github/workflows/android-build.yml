@@ -45,8 +45,7 @@ jobs:
         run: |
           echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m" >> android/gradle.properties
           echo "android.enablePngCrunch=false" >> android/gradle.properties
-          echo "android.useNewCruncher=false" >> android/gradle.properties
-          echo "suppressKotlinVersionCompatibilityCheck=true" >> android/gradle.properties
+          echo "androidx.compose.compiler.plugins.kotlin.suppressKotlinVersionCompatibilityCheck=true" >> android/gradle.properties
 
       - name: 🏗️ Build Android Release
         run: |
