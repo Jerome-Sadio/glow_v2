@@ -34,7 +34,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: 🔄 Sync Expo dependencies
-        run: npx expo install --fix --yes
+        run: npx expo install --fix -- --yes
 
       - name: 🛠 Clean & Prebuild
         run: |
