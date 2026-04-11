@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BOSSES } from '../data/bosses';
 import { QUOTES } from '../data/quotes';
+import { TITLES } from '../data/titles';
 
 const INITIAL_STATS = {
   force: 10,
@@ -38,6 +39,8 @@ export const useGameState = () => {
   const [stats, setStats] = useState(INITIAL_STATS);
   const [progress, setProgress] = useState({ level: 1, xp: 0, xpToNextLevel: 100 });
   const [tasks, setTasks] = useState(DEFAULT_TASKS);
+  const [history, setHistory] = useState([]);
+  const [unlockedTitles, setUnlockedTitles] = useState(['novice']);
   const [bossIndex, setBossIndex] = useState(0);
   const [bossHp, setBossHp] = useState(BOSSES[0].hp);
   const [streak, setStreak] = useState(0);
@@ -65,7 +68,8 @@ export const useGameState = () => {
         const savedUser = await AsyncStorage.getItem('@glow_user');
         const savedStats = await AsyncStorage.getItem('@glow_stats');
         const savedProgress = await AsyncStorage.getItem('@glow_progress');
-        const savedTasks = await AsyncStorage.getItem('@glow_tasks');
+        const savedHistory = await AsyncStorage.getItem('@glow_history');
+        const savedTitles = await AsyncStorage.getItem('@glow_titles');
         const savedBossIdx = await AsyncStorage.getItem('@glow_boss_idx');
         const savedBossHp = await AsyncStorage.getItem('@glow_boss_hp');
         const savedStreak = await AsyncStorage.getItem('@glow_streak');
@@ -74,6 +78,8 @@ export const useGameState = () => {
         if (savedStats) setStats(JSON.parse(savedStats));
         if (savedProgress) setProgress(JSON.parse(savedProgress));
         if (savedTasks) setTasks(JSON.parse(savedTasks));
+        if (savedHistory) setHistory(JSON.parse(savedHistory));
+        if (savedTitles) setUnlockedTitles(JSON.parse(savedTitles));
         if (savedBossIdx) setBossIndex(parseInt(savedBossIdx));
         if (savedBossHp) setBossHp(parseFloat(savedBossHp));
         if (savedStreak) setStreak(parseInt(savedStreak));
@@ -95,6 +101,8 @@ export const useGameState = () => {
         await AsyncStorage.setItem('@glow_stats', JSON.stringify(stats));
         await AsyncStorage.setItem('@glow_progress', JSON.stringify(progress));
         await AsyncStorage.setItem('@glow_tasks', JSON.stringify(tasks));
+        await AsyncStorage.setItem('@glow_history', JSON.stringify(history));
+        await AsyncStorage.setItem('@glow_titles', JSON.stringify(unlockedTitles));
         await AsyncStorage.setItem('@glow_boss_idx', bossIndex.toString());
         await AsyncStorage.setItem('@glow_boss_hp', bossHp.toString());
         await AsyncStorage.setItem('@glow_streak', streak.toString());
@@ -103,7 +111,19 @@ export const useGameState = () => {
       }
     };
     saveAll();
-  }, [user, stats, progress, tasks, bossIndex, bossHp, streak, loading]);
+  }, [user, stats, progress, tasks, history, unlockedTitles, bossIndex, bossHp, streak, loading]);
+
+  // Title Unlocking Logic
+  useEffect(() => {
+    if (loading) return;
+    
+    const state = { progress, stats, bossIndex, streak };
+    const newlyUnlocked = TITLES.filter(t => !unlockedTitles.includes(t.id) && t.requirement(state));
+    
+    if (newlyUnlocked.length > 0) {
+      setUnlockedTitles(prev => [...prev, ...newlyUnlocked.map(t => t.id)]);
+    }
+  }, [progress, stats, bossIndex, streak, loading]);
 
   // Game Logic
   const addExperience = (amount) => {
@@ -123,10 +143,15 @@ export const useGameState = () => {
   };
 
   const completeTask = (taskId) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task || task.completed) return;
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1 || tasks[taskIndex].completed) return;
 
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
+    const task = tasks[taskIndex];
+    
+    // Move to history
+    const completedTask = { ...task, completed: true, completedAt: new Date().toISOString() };
+    setHistory(prev => [completedTask, ...prev].slice(0, 100)); // Keep last 100
+    setTasks(prev => prev.filter(t => t.id !== taskId));
 
     if (task.stat) {
       setStats(prev => ({ ...prev, [task.stat]: Math.min(prev[task.stat] + 2, 100) }));
@@ -194,6 +219,8 @@ export const useGameState = () => {
     stats,
     progress: { ...progress, rank },
     tasks,
+    history,
+    unlockedTitles,
     boss: currentBoss,
     streak,
     loading,

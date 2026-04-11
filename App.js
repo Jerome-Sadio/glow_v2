@@ -46,7 +46,9 @@ const App = () => {
     getRandomQuote, 
     completeOnboarding,
     relapse,
-    addAddiction
+    addAddiction,
+    history,
+    unlockedTitles
   } = useGameState();
 
   const [activeTab, setActiveTab] = useState('home');
@@ -155,7 +157,13 @@ const App = () => {
       case 'combat':
         return <CombatView user={user} relapse={relapse} addAddiction={addAddiction} />;
       case 'profile':
-        return <ProfileView user={user} progress={progress} stats={stats} />;
+        return <ProfileView 
+          user={user} 
+          progress={progress} 
+          stats={stats} 
+          history={history}
+          unlockedTitles={unlockedTitles}
+        />;
       default:
         return null;
     }

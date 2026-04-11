@@ -8,7 +8,8 @@ import {
   Image,
   Dimensions,
   Alert,
-  BackHandler
+  BackHandler,
+  Modal
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -23,9 +24,15 @@ import {
 const MALE_AVATAR = require('../../assets/pfp_m.webp');
 const FEMALE_AVATAR = require('../../assets/pfp_f.webp');
 
+import TitlesModal from './TitlesModal';
+import HistoryModal from './HistoryModal';
+
 const { width } = Dimensions.get('window');
 
-const ProfileView = ({ user, progress, stats }) => {
+const ProfileView = ({ user, progress, stats, unlockedTitles, history }) => {
+  const [showTitles, setShowTitles] = React.useState(false);
+  const [showHistory, setShowHistory] = React.useState(false);
+  
   const avatarImg = user.sexe === 'femme' ? FEMALE_AVATAR : MALE_AVATAR;
 
   const handleMenuPress = (label) => {
@@ -38,6 +45,10 @@ const ProfileView = ({ user, progress, stats }) => {
           { text: "FERMER", onPress: () => BackHandler.exitApp(), style: "destructive" }
         ]
       );
+    } else if (label === 'TITRES DÉBLOQUÉS') {
+      setShowTitles(true);
+    } else if (label === 'ARCHIVES DES QUÊTES') {
+      setShowHistory(true);
     } else {
       Alert.alert("SYSTÈME", `La fonction ${label} est en cours de synchronisation.`);
     }
@@ -109,6 +120,18 @@ const ProfileView = ({ user, progress, stats }) => {
       </View>
 
       <Text style={styles.version}>VERSION DU SYSTÈME : 2.0.0-NATIVE</Text>
+
+      <TitlesModal 
+        visible={showTitles} 
+        onClose={() => setShowTitles(false)} 
+        unlockedTitles={unlockedTitles || []} 
+      />
+
+      <HistoryModal 
+        visible={showHistory} 
+        onClose={() => setShowHistory(false)} 
+        history={history || []} 
+      />
     </ScrollView>
   );
 };
