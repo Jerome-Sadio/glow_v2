@@ -5,7 +5,8 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   Dimensions,
-  Modal
+  Modal,
+  ScrollView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -22,7 +23,10 @@ const BossView = ({ boss, nextBoss }) => {
   const isDead = boss.hp <= 0;
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.scrollContainer} 
+      contentContainerStyle={styles.container}
+    >
       {/* Boss Header */}
       <View style={styles.header}>
         <View style={styles.alertLine}>
@@ -105,12 +109,13 @@ const BossView = ({ boss, nextBoss }) => {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, alignItems: 'center' },
+  scrollContainer: { flex: 1 },
+  container: { padding: 20, alignItems: 'center', paddingBottom: 100 },
   header: { alignItems: 'center', marginBottom: 50 },
   alertLine: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,0,85,0.1)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,0,85,0.2)', marginBottom: 15 },
   alertText: { color: '#ff0055', fontSize: 10, fontWeight: '900', letterSpacing: 2 },
