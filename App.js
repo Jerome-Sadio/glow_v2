@@ -29,6 +29,7 @@ import QuestView from './src/components/QuestView';
 import BossView from './src/components/BossView';
 import CombatView from './src/components/CombatView';
 import ProfileView from './src/components/ProfileView';
+import { SystemHUD } from './src/components/SystemHUD';
 
 const App = () => {
   const { 
@@ -117,9 +118,13 @@ const App = () => {
 
   // --- RENDER CONTENT BY TAB ---
   const renderContent = () => {
+    let content;
+    let title = "[ SYSTEM HUD ]";
+
     switch (activeTab) {
       case 'home':
-        return (
+        title = "INTERFACE CHASSEUR";
+        content = (
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.header}>
               <View>
@@ -153,14 +158,28 @@ const App = () => {
             </View>
           </ScrollView>
         );
+        break;
       case 'quests':
-        return <QuestView tasks={tasks} addTask={addTask} completeTask={completeTask} deleteTask={deleteTask} />;
+        title = "QUÊTES EN COURS";
+        content = <QuestView tasks={tasks} addTask={addTask} completeTask={completeTask} deleteTask={deleteTask} />;
+        break;
       case 'boss':
-        return <BossView boss={boss} nextBoss={nextBoss} />;
+        title = "CENTRE DE COMBAT";
+        content = <BossView boss={boss} nextBoss={nextBoss} />;
+        break;
       case 'combat':
-        return <CombatView user={user} relapse={relapse} addAddiction={addAddiction} depressionHpState={depressionHp} />;
+        title = "CONTRÔLE INTÉRIEUR";
+        content = <CombatView 
+          user={user} 
+          relapse={relapse} 
+          addAddiction={addAddiction} 
+          deleteAddiction={deleteAddiction}
+          depressionHpState={depressionHp} 
+        />;
+        break;
       case 'profile':
-        return <ProfileView 
+        title = "DONNÉES DU CHASSEUR";
+        content = <ProfileView 
           user={user} 
           progress={progress} 
           stats={stats} 
@@ -169,9 +188,16 @@ const App = () => {
           updateProfile={updateProfile}
           resetGameState={resetGameState}
         />;
+        break;
       default:
-        return null;
+        content = null;
     }
+
+    return (
+      <SystemHUD title={title}>
+        {content}
+      </SystemHUD>
+    );
   };
 
   return (

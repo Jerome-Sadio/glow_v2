@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   ScrollView,
   TextInput,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -19,7 +20,7 @@ import {
 
 const { width } = Dimensions.get('window');
 
-const CombatView = ({ user, relapse, addAddiction, depressionHpState }) => {
+const CombatView = ({ user, relapse, addAddiction, deleteAddiction, depressionHpState }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('🔥');
@@ -33,8 +34,12 @@ const CombatView = ({ user, relapse, addAddiction, depressionHpState }) => {
   const calculateStreak = (lastRelapse) => {
     const last = new Date(lastRelapse);
     const now = new Date();
-    const diffTime = Math.abs(now - last);
+    
+    // Day calculation based on 24h blocks
+    const diffTime = now.getTime() - last.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    // We return the number of FULL 24h periods
     return diffDays;
   };
 
@@ -134,21 +139,55 @@ const CombatView = ({ user, relapse, addAddiction, depressionHpState }) => {
                 </View>
               </View>
               <View style={styles.streakBox}>
-                <Text style={styles.streakCount}>{streak}</Text>
-                <Text style={styles.streakUnit}>JOURS</Text>
+                <Text style={styles.streakCount}>{streak + 1}</Text>
+                <Text style={styles.streakUnit}>JOUR {streak + 1}</Text>
               </View>
+              <TouchableOpacity 
+                style={styles.deleteAddictionBtn} 
+                onPress={() => {
+                  Alert.alert(
+                    "ALERTE CRITIQUE",
+                    `Voulez-vous vraiment bannir définitivement ce démon (${addiction.name.toUpperCase()}) du système ?`,
+                    [
+                      { text: "ANNULER", style: "cancel" },
+                      { text: "BANNIRE", onPress: () => deleteAddiction(addiction.id), style: "destructive" }
+                    ]
+                  );
+                }}
+              >
+                <X size={14} color="rgba(255,255,255,0.2)" />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.cardActions}>
               <TouchableOpacity 
                 style={styles.relapseBtn} 
-                onPress={() => relapse(addiction.id)}
+                onPress={() => {
+                  Alert.alert(
+                    "ALERTE SYSTÈME",
+                    `Confirmez-vous la réinitialisation de votre séquence pour ${addiction.name.toUpperCase()} ? Cette action est irréversible.`,
+                    [
+                      { text: "ANNULER", style: "cancel" },
+                      { text: "RÉINITIALISER", onPress: () => relapse(addiction.id), style: "destructive" }
+                    ]
+                  );
+                }}
               >
-                <AlertTriangle size={14} color="#ff0055" />
-                <Text style={styles.relapseText}>RELAPS</Text>
+                <AlertTriangle size={12} color="#ff0055" />
+                <Text style={styles.relapseText}>RÉINITIALISER</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.historyBtn}>
-                <History size={16} color="#555" />
+              <TouchableOpacity 
+                style={styles.historyBtn}
+                onPress={() => {
+                  const best = addiction.bestStreak || 0;
+                  Alert.alert(
+                    `ARCHIVES : ${addiction.name.toUpperCase()}`,
+                    `Statut actuel : JOUR ${streak + 1}\nRecord personnel : ${best} JOURS\n\nContinuez vos efforts, Chasseur.`,
+                    [{ text: "OK" }]
+                  );
+                }}
+              >
+                <History size={14} color="#555" />
               </TouchableOpacity>
             </View>
           </View>
@@ -201,10 +240,11 @@ const styles = StyleSheet.create({
   streakCount: { color: '#00f2ff', fontSize: 24, fontWeight: '900' },
   streakUnit: { color: 'rgba(0,242,255,0.3)', fontSize: 9, fontWeight: '900' },
 
-  cardActions: { flexDirection: 'row', gap: 10, marginTop: 15 },
-  relapseBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, backgroundColor: 'rgba(255,0,85,0.05)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,0,85,0.2)' },
-  relapseText: { color: '#ff0055', fontSize: 10, fontWeight: '900', letterSpacing: 2 },
-  historyBtn: { width: 50, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }
+  cardActions: { flexDirection: 'row', gap: 10, marginTop: 15, justifyContent: 'flex-end' },
+  relapseBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: 'rgba(255,0,85,0.05)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,0,85,0.2)' },
+  relapseText: { color: '#ff0055', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  historyBtn: { width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  deleteAddictionBtn: { position: 'absolute', top: -10, right: -10, padding: 10 },
 });
 
 export default CombatView;

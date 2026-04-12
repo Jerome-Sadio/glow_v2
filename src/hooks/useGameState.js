@@ -80,8 +80,34 @@ export const useGameState = () => {
         const savedBossHp = await AsyncStorage.getItem('@glow_boss_hp');
         const savedDepressionHp = await AsyncStorage.getItem('@glow_depression_hp');
         const savedStreak = await AsyncStorage.getItem('@glow_streak');
+        const savedTasks = await AsyncStorage.getItem('@glow_tasks');
 
-        if (savedUser) setUser(JSON.parse(savedUser));
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+
+          // Check Daily Streak
+          const lastCheck = new Date(parsedUser.lastDailyCheck);
+          const now = new Date();
+          const lastDateStr = lastCheck.toDateString();
+          const nowDateStr = now.toDateString();
+
+          if (lastDateStr !== nowDateStr) {
+            // New Day!
+            const diffTime = Math.abs(now - lastCheck);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            let newStreak = parseInt(savedStreak) || 0;
+            if (diffDays === 1) {
+              newStreak += 1;
+            } else if (diffDays > 1) {
+              newStreak = 1; // Reset streak if missed days
+            }
+
+            setStreak(newStreak);
+            setUser(prev => ({ ...prev, lastDailyCheck: now.toISOString() }));
+          }
+        }
         if (savedStats) setStats(JSON.parse(savedStats));
         if (savedProgress) setProgress(JSON.parse(savedProgress));
         if (savedTasks) setTasks(JSON.parse(savedTasks));
@@ -90,7 +116,7 @@ export const useGameState = () => {
         if (savedBossIdx) setBossIndex(parseInt(savedBossIdx));
         if (savedBossHp) setBossHp(parseFloat(savedBossHp));
         if (savedDepressionHp) setDepressionHp(parseFloat(savedDepressionHp));
-        if (savedStreak) setStreak(parseInt(savedStreak));
+        if (savedStreak && !savedUser) setStreak(parseInt(savedStreak)); // Fallback
       } catch (e) {
         console.error("Error loading state", e);
       } finally {
@@ -268,6 +294,13 @@ export const useGameState = () => {
     }));
   };
 
+  const deleteAddiction = (addictionId) => {
+    setUser(prev => ({
+      ...prev,
+      addictions: prev.addictions.filter(a => a.id !== addictionId)
+    }));
+  };
+
   const updateProfile = (pseudo, sexe) => {
     setUser(prev => ({ ...prev, pseudo, sexe }));
   };
@@ -316,6 +349,7 @@ export const useGameState = () => {
     completeOnboarding,
     relapse,
     addAddiction,
+    deleteAddiction,
     updateProfile,
     resetGameState
   };

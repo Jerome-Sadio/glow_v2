@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   FlatList, 
   TextInput,
-  Animated
+  Animated,
+  Alert
 } from 'react-native';
 import { 
   Plus, 
@@ -39,10 +40,10 @@ const CATEGORIES = [
 ];
 
 const PRIORITIES = [
-  { id: 'urgent-important', label: 'Urgent & Important', color: '#ff0055' },
-  { id: 'important', label: 'Important, Non-Urgent', color: '#ffa500' },
-  { id: 'urgent', label: 'Urgent, Non-Important', color: '#4f46e5' },
-  { id: 'normal', label: 'Non-Urgent, Non-Important', color: '#4caf50' },
+  { id: 'urgent-important', label: 'Urgent & Important (FAIRE)', color: '#ff0055' },
+  { id: 'important', label: 'Important, Non-Urgent (PLANIFIER)', color: '#ffa500' },
+  { id: 'urgent', label: 'Urgent, Non-Important (DÉLÉGUER)', color: '#4f46e5' },
+  { id: 'normal', label: 'Non-Urgent, Non-Important (ÉLIMINER)', color: '#4caf50' },
 ];
 
 const DAYS = [
@@ -63,6 +64,7 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
   const [minute, setMinute] = useState('30');
   const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5, 6, 0]);
   const [priority, setPriority] = useState('normal');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleDay = (dayId) => {
     if (selectedDays.includes(dayId)) {
@@ -72,12 +74,18 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
     }
   };
 
-  const handleCreate = () => {
-    if (!newTaskText.trim()) return;
-    const time = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
-    addTask(newTaskText, selectedCat, selectedCat, 30, time, selectedDays, priority);
-    setNewTaskText('');
-    setShowAdd(false);
+  const handleCreate = async () => {
+    if (!newTaskText.trim() || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      const time = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+      await addTask(newTaskText, selectedCat, selectedCat, 30, time, selectedDays, priority);
+      setNewTaskText('');
+      setShowAdd(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderTask = ({ item }) => {
@@ -105,7 +113,10 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
                 <Award size={10} color="#00f2ff" />
                 <Text style={styles.xpText}>+{item.xp} XP</Text>
               </View>
-              <Text style={styles.catLabel}>{cat.label}</Text>
+              <View style={[styles.catBadge, { backgroundColor: `${cat.color}15`, borderColor: `${cat.color}40` }]}>
+                <cat.icon size={10} color={cat.color} />
+                <Text style={[styles.catLabel, { color: cat.color }]}>{cat.label}</Text>
+              </View>
             </View>
 
             {(item.time || item.days) && (
@@ -120,7 +131,19 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
         </View>
 
         {!item.completed && (
-          <TouchableOpacity onPress={() => deleteTask(item.id)} style={styles.deleteBtn}>
+          <TouchableOpacity 
+            onPress={() => {
+              Alert.alert(
+                "ABANDON DE QUÊTE",
+                "Voulez-vous vraiment éliminer cette quête ? Cette action est définitive.",
+                [
+                  { text: "MAINTENIR", style: "cancel" },
+                  { text: "ÉLIMINER", onPress: () => deleteTask(item.id), style: "destructive" }
+                ]
+              );
+            }} 
+            style={styles.deleteBtn}
+          >
             <Trash2 size={18} color="#555" />
           </TouchableOpacity>
         )}
@@ -216,11 +239,13 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
           </View>
 
           <TouchableOpacity 
-            style={[styles.createBtn, !newTaskText.trim() && { opacity: 0.3 }]}
+            style={[styles.createBtn, (!newTaskText.trim() || isSubmitting) && { opacity: 0.3 }]}
             onPress={handleCreate}
-            disabled={!newTaskText.trim()}
+            disabled={!newTaskText.trim() || isSubmitting}
           >
-            <Text style={styles.createBtnText}>ACCEPTER LA QUÊTE</Text>
+            <Text style={styles.createBtnText}>
+              {isSubmitting ? "SYNCHRONISATION..." : "ACCEPTER LA QUÊTE"}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -275,7 +300,8 @@ const styles = StyleSheet.create({
   taskMeta: { flexDirection: 'row', gap: 10, marginTop: 5 },
   xpBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,242,255,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   xpText: { color: '#00f2ff', fontSize: 9, fontWeight: '900' },
-  catLabel: { color: '#555', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' },
+  catBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1 },
+  catLabel: { fontSize: 8, fontWeight: '900', textTransform: 'uppercase' },
   
   deleteBtn: { padding: 10 },
   empty: { paddingVertical: 60, alignItems: 'center' },

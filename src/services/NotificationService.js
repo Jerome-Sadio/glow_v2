@@ -38,15 +38,36 @@ export const scheduleTaskNotification = async (task) => {
 
   const notificationIds = [];
 
+  // 1. SEND IMMEDIATE CONFIRMATION
+  const confirmId = await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "QUÊTE ENREGISTRÉE 📜",
+      body: `Le système a validé votre nouvelle quête : ${task.text}`,
+      sound: true,
+    },
+    trigger: null, // trigger: null means send immediately
+  });
+  notificationIds.push(confirmId);
+
+  // 2. SCHEDULE RECURRING REMINDERS
   for (const day of task.days) {
     // Expo days: 1 (Mon) to 7 (Sun)
     // Mapping my Sunday (0) to Expo Sunday (7)
     const weekday = day === 0 ? 7 : day;
 
+    // PRIORITY LABEL MAPPING (Matching QuestView)
+    const priorityLabels = {
+      'urgent-important': 'Urgent & Important 🚨',
+      'important': 'Important, Non-Urgent 📅',
+      'urgent': 'Urgent, Non-Important ⚡',
+      'normal': 'Non-Urgent, Non-Important 🧘'
+    };
+    const priorityText = priorityLabels[task.priority] || 'Quête Standard';
+
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: "ALERTE SYSTÈME ⚔️",
-        body: `Préparation pour la quête : ${task.text}`,
+        body: `[${priorityText}] - Préparation : ${task.text}`,
         sound: true,
       },
       trigger: {
