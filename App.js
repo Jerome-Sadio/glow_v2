@@ -49,6 +49,7 @@ const App = () => {
     completeOnboarding,
     relapse,
     addAddiction,
+    deleteAddiction,
     history,
     unlockedTitles,
     updateProfile,

@@ -150,7 +150,7 @@ const CombatView = ({ user, relapse, addAddiction, deleteAddiction, depressionHp
                     `Voulez-vous vraiment bannir définitivement ce démon (${addiction.name.toUpperCase()}) du système ?`,
                     [
                       { text: "ANNULER", style: "cancel" },
-                      { text: "BANNIRE", onPress: () => deleteAddiction(addiction.id), style: "destructive" }
+                      { text: "BANNIR", onPress: () => deleteAddiction(addiction.id), style: "destructive" }
                     ]
                   );
                 }}
