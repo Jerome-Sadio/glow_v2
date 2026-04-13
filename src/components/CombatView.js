@@ -32,14 +32,17 @@ const CombatView = ({ user, relapse, addAddiction, deleteAddiction, depressionHp
   const depressionPercent = (depressionHp / depressionMaxHp) * 100;
 
   const calculateStreak = (lastRelapse) => {
+    if (!lastRelapse) return 0;
     const last = new Date(lastRelapse);
     const now = new Date();
     
-    // Day calculation based on 24h blocks
-    const diffTime = now.getTime() - last.getTime();
+    // Set both to midnight to compare calendar days
+    const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const diffTime = today.getTime() - lastDay.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    // We return the number of FULL 24h periods
     return diffDays;
   };
 
@@ -139,8 +142,8 @@ const CombatView = ({ user, relapse, addAddiction, deleteAddiction, depressionHp
                 </View>
               </View>
               <View style={styles.streakBox}>
-                <Text style={styles.streakCount}>{streak + 1}</Text>
-                <Text style={styles.streakUnit}>JOUR {streak + 1}</Text>
+                <Text style={styles.streakCount}>{streak}</Text>
+                <Text style={styles.streakUnit}>{streak > 1 ? 'JOURS' : 'JOUR'}</Text>
               </View>
               <TouchableOpacity 
                 style={styles.deleteAddictionBtn} 

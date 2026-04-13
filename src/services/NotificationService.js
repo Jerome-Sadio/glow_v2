@@ -38,46 +38,64 @@ export const scheduleTaskNotification = async (task) => {
 
   const notificationIds = [];
 
-  // 1. SEND IMMEDIATE CONFIRMATION
-  const confirmId = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "QUÊTE ENREGISTRÉE 📜",
-      body: `Le système a validé votre nouvelle quête : ${task.text}`,
-      sound: true,
-    },
-    trigger: null, // trigger: null means send immediately
-  });
-  notificationIds.push(confirmId);
-
-  // 2. SCHEDULE RECURRING REMINDERS
-  for (const day of task.days) {
-    // Expo days: 1 (Mon) to 7 (Sun)
-    // Mapping my Sunday (0) to Expo Sunday (7)
-    const weekday = day === 0 ? 7 : day;
-
-    // PRIORITY LABEL MAPPING (Matching QuestView)
-    const priorityLabels = {
-      'urgent-important': 'Urgent & Important 🚨',
-      'important': 'Important, Non-Urgent 📅',
-      'urgent': 'Urgent, Non-Important ⚡',
-      'normal': 'Non-Urgent, Non-Important 🧘'
-    };
-    const priorityText = priorityLabels[task.priority] || 'Quête Standard';
-
-    const id = await Notifications.scheduleNotificationAsync({
+  // 1. SEND SINGLE IMMEDIATE CONFIRMATION
+  try {
+    const confirmId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "ALERTE SYSTÈME ⚔️",
-        body: `[${priorityText}] - Préparation : ${task.text}`,
+        title: "SYSTÈME ACTIVÉ 🛡️",
+        body: `Quête synchronisée : ${task.text}`,
         sound: true,
       },
-      trigger: {
-        weekday,
-        hour: notifyHours,
-        minute: notifyMinutes,
-        repeats: true,
-      },
+      trigger: null,
     });
-    notificationIds.push(id);
+    notificationIds.push(confirmId);
+  } catch (e) {
+    console.warn("Failed to schedule confirmation", e);
+  }
+
+  // 2. SCHEDULE RECURRING REMINDERS
+  const [hours, minutes] = task.time.split(':').map(Number);
+  
+  // Calculate 5 minutes before
+  let notifyHours = hours;
+  let notifyMinutes = minutes - 5;
+  if (notifyMinutes < 0) {
+    notifyMinutes += 60;
+    notifyHours = (notifyHours - 1 + 24) % 24;
+  }
+
+  const priorityLabels = {
+    'urgent-important': 'Urgent & Important 🚨',
+    'important': 'Important, Non-Urgent 📅',
+    'urgent': 'Urgent, Non-Important ⚡',
+    'normal': 'Non-Urgent, Non-Important 🧘'
+  };
+  const priorityText = priorityLabels[task.priority] || 'Quête Standard';
+
+  for (const day of task.days) {
+    // Expo days: 1 (Sunday) to 7 (Saturday)
+    // JS days: 0 (Sunday) to 6 (Saturday)
+    // Correct mapping: day + 1
+    const weekday = day + 1;
+
+    try {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "ALERTE SYSTÈME ⚔️",
+          body: `[${priorityText}] - Préparation : ${task.text}`,
+          sound: true,
+        },
+        trigger: {
+          weekday,
+          hour: notifyHours,
+          minute: notifyMinutes,
+          repeats: true,
+        },
+      });
+      notificationIds.push(id);
+    } catch (e) {
+      console.warn(`Failed to schedule notification for day ${day}`, e);
+    }
   }
 
   return notificationIds;

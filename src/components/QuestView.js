@@ -40,10 +40,10 @@ const CATEGORIES = [
 ];
 
 const PRIORITIES = [
-  { id: 'urgent-important', label: 'Urgent & Important (FAIRE)', color: '#ff0055' },
-  { id: 'important', label: 'Important, Non-Urgent (PLANIFIER)', color: '#ffa500' },
-  { id: 'urgent', label: 'Urgent, Non-Important (DÉLÉGUER)', color: '#4f46e5' },
-  { id: 'normal', label: 'Non-Urgent, Non-Important (ÉLIMINER)', color: '#4caf50' },
+  { id: 'urgent-important', label: 'Urgent & Important', color: '#ff0055' },
+  { id: 'important', label: 'Important, Non-Urgent', color: '#ffa500' },
+  { id: 'urgent', label: 'Urgent, Non-Important', color: '#4f46e5' },
+  { id: 'normal', label: 'Non-Urgent, Non-Important', color: '#4caf50' },
 ];
 
 const DAYS = [
@@ -92,22 +92,36 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
     const cat = CATEGORIES.find(c => c.id === item.category) || CATEGORIES[0];
     const prioRecord = PRIORITIES.find(p => p.id === item.priority) || PRIORITIES[3];
     
+    // Check if recurring task is done for today
+    const isDoneToday = item.lastCompletedAt && 
+      new Date(item.lastCompletedAt).toDateString() === new Date().toDateString();
+    
+    const isActuallyCompleted = item.completed || isDoneToday;
+    
     return (
-      <View style={[styles.taskItem, item.completed && styles.taskCompleted, { borderLeftColor: prioRecord.color, borderLeftWidth: 4 }]}>
+      <View style={[
+        styles.taskItem, 
+        isActuallyCompleted && styles.taskCompleted, 
+        { 
+          borderLeftColor: prioRecord.color, 
+          borderLeftWidth: 4,
+          backgroundColor: isActuallyCompleted ? 'rgba(255,255,255,0.02)' : `${prioRecord.color}10`
+        }
+      ]}>
         <View style={styles.taskLeft}>
           <TouchableOpacity 
             onPress={() => completeTask(item.id)}
-            disabled={item.completed}
+            disabled={isActuallyCompleted}
             style={styles.checkBtn}
           >
-            {item.completed ? 
-              <CheckCircle2 size={24} color="#00f2ff" /> : 
+            {isActuallyCompleted ? 
+              <CheckCircle2 size={24} color={isDoneToday ? "#00f2ff" : "#ccc"} /> : 
               <Circle size={24} color="#333" />
             }
           </TouchableOpacity>
           
           <View style={styles.taskInfo}>
-            <Text style={[styles.taskText, item.completed && styles.taskTextCompleted]}>{item.text}</Text>
+            <Text style={[styles.taskText, isActuallyCompleted && styles.taskTextCompleted]}>{item.text}</Text>
             <View style={styles.taskMeta}>
               <View style={styles.xpBadge}>
                 <Award size={10} color="#00f2ff" />
@@ -130,7 +144,7 @@ const QuestView = ({ tasks, addTask, completeTask, deleteTask }) => {
           </View>
         </View>
 
-        {!item.completed && (
+        {!isActuallyCompleted && (
           <TouchableOpacity 
             onPress={() => {
               Alert.alert(

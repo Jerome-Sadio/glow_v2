@@ -88,19 +88,35 @@ export const useGameState = () => {
 
           // Check Daily Streak
           const now = new Date();
-          const nowDateStr = now.toDateString();
-          const lastCheckStr = parsedUser.lastDailyCheck ? new Date(parsedUser.lastDailyCheck).toDateString() : null;
+          const lastCheck = parsedUser.lastDailyCheck ? new Date(parsedUser.lastDailyCheck) : null;
 
-          if (lastCheckStr !== nowDateStr) {
-            // C'est un nouveau jour (ou première fois)
-            const currentStreak = parseInt(savedStreak) || 0;
-            const newStreak = currentStreak + 1;
+          if (lastCheck) {
+            // Set both to midnight to compare calendar days
+            const last = new Date(lastCheck);
+            last.setHours(0, 0, 0, 0);
+            const today = new Date(now);
+            today.setHours(0, 0, 0, 0);
             
-            setStreak(newStreak);
-            setUser(prev => ({ ...prev, lastDailyCheck: now.toISOString() }));
+            const diffDays = Math.floor((today - last) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1) {
+              // Consecutive day
+              const newStreak = (parseInt(savedStreak) || 0) + 1;
+              setStreak(newStreak);
+              setUser(prev => ({ ...prev, lastDailyCheck: now.toISOString() }));
+            } else if (diffDays > 1) {
+              // Missed days, streak reset or logic (user said "it increments", maybe he wants total days?)
+              // Historically, streaks reset if skip. However, let's keep it simple: +1 for any new day.
+              setStreak(prev => prev + 1);
+              setUser(prev => ({ ...prev, lastDailyCheck: now.toISOString() }));
+            } else {
+              // Same day
+              setStreak(parseInt(savedStreak) || 0);
+            }
           } else {
-            // Même jour, on garde le streak tel quel
-            setStreak(parseInt(savedStreak) || 0);
+            // First time
+            setStreak(0); // Start at 0 as requested
+            setUser(prev => ({ ...prev, lastDailyCheck: now.toISOString() }));
           }
         }
         if (savedStats) setStats(JSON.parse(savedStats));
@@ -182,14 +198,24 @@ export const useGameState = () => {
     if (taskIndex === -1 || tasks[taskIndex].completed) return;
 
     const task = tasks[taskIndex];
+    const isRecurring = task.days && task.days.length > 0;
     
     // Move to history
     const completedTask = { ...task, completed: true, completedAt: new Date().toISOString() };
     setHistory(prev => [completedTask, ...prev].slice(0, 100)); // Keep last 100
-    setTasks(prev => prev.filter(t => t.id !== taskId));
 
-    // Cancel notifications
-    if (task.notificationIds) {
+    if (isRecurring) {
+      // Update task in list but don't remove
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? { ...t, lastCompletedAt: new Date().toISOString() } : t
+      ));
+    } else {
+      // One-time task, remove
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+    }
+
+    // Cancel notifications (only if it's NOT recurring, or maybe we don't want to cancel recurring ones)
+    if (!isRecurring && task.notificationIds) {
       cancelTaskNotifications(task.notificationIds);
     }
 

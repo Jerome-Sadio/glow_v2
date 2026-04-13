@@ -134,7 +134,7 @@ const App = () => {
               </View>
               <View style={styles.streakBadge}>
                 <Flame size={16} color="#ffa500" />
-                <Text style={styles.streakText}>{streak} JOURS</Text>
+                <Text style={styles.streakText}>{streak} {streak > 1 ? 'JOURS' : 'JOUR'}</Text>
               </View>
             </View>
 
