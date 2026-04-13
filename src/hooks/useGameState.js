@@ -36,7 +36,7 @@ const INITIAL_USER = {
     { id: 'sucre', name: 'Malbouffe', icon: '🍔', lastRelapse: new Date().toISOString(), bestStreak: 0 },
     { id: 'porn', name: 'Pornographie', icon: '🚫', lastRelapse: new Date().toISOString(), bestStreak: 0 },
   ],
-  lastDailyCheck: new Date().toISOString()
+  lastDailyCheck: null
 };
 
 export const useGameState = () => {
@@ -87,25 +87,20 @@ export const useGameState = () => {
           setUser(parsedUser);
 
           // Check Daily Streak
-          const lastCheck = new Date(parsedUser.lastDailyCheck);
           const now = new Date();
-          const lastDateStr = lastCheck.toDateString();
           const nowDateStr = now.toDateString();
+          const lastCheckStr = parsedUser.lastDailyCheck ? new Date(parsedUser.lastDailyCheck).toDateString() : null;
 
-          if (lastDateStr !== nowDateStr) {
-            // New Day!
-            const diffTime = Math.abs(now - lastCheck);
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          if (lastCheckStr !== nowDateStr) {
+            // C'est un nouveau jour (ou première fois)
+            const currentStreak = parseInt(savedStreak) || 0;
+            const newStreak = currentStreak + 1;
             
-            let newStreak = parseInt(savedStreak) || 0;
-            if (diffDays === 1) {
-              newStreak += 1;
-            } else if (diffDays > 1) {
-              newStreak = 1; // Reset streak if missed days
-            }
-
             setStreak(newStreak);
             setUser(prev => ({ ...prev, lastDailyCheck: now.toISOString() }));
+          } else {
+            // Même jour, on garde le streak tel quel
+            setStreak(parseInt(savedStreak) || 0);
           }
         }
         if (savedStats) setStats(JSON.parse(savedStats));
