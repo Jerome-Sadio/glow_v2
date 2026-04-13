@@ -36,7 +36,7 @@ const INITIAL_USER = {
     { id: 'sucre', name: 'Malbouffe', icon: '🍔', lastRelapse: new Date().toISOString(), bestStreak: 0 },
     { id: 'porn', name: 'Pornographie', icon: '🚫', lastRelapse: new Date().toISOString(), bestStreak: 0 },
   ],
-  lastDailyCheck: null
+  lastDailyCheck: new Date().toISOString()
 };
 
 export const useGameState = () => {
