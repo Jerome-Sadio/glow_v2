@@ -53,17 +53,6 @@ export const scheduleTaskNotification = async (task) => {
     console.warn("Failed to schedule confirmation", e);
   }
 
-  // 2. SCHEDULE RECURRING REMINDERS
-  const [hours, minutes] = task.time.split(':').map(Number);
-  
-  // Calculate 5 minutes before
-  let notifyHours = hours;
-  let notifyMinutes = minutes - 5;
-  if (notifyMinutes < 0) {
-    notifyMinutes += 60;
-    notifyHours = (notifyHours - 1 + 24) % 24;
-  }
-
   const priorityLabels = {
     'urgent-important': 'Urgent & Important 🚨',
     'important': 'Important, Non-Urgent 📅',
